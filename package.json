@@ -1,12 +1,42 @@
 {
+  "name": "flashloan-institutional",
+  "version": "1.0.0",
+  "description": "Institutional-grade flash loan contract with advanced security features",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy-institutional.js",
+    "deploy:testnet": "hardhat run scripts/deploy-institutional.js --network bscTestnet",
+    "deploy:mainnet": "hardhat run scripts/deploy-institutional.js --network bsc",
+    "verify": "hardhat verify",
+    "coverage": "hardhat coverage",
+    "gas": "REPORT_GAS=true hardhat test",
+    "lint": "solhint 'contracts/**/*.sol'",
+    "lint:fix": "solhint 'contracts/**/*.sol' --fix"
+  },
+  "keywords": [
+    "defi",
+    "flash-loan",
+    "arbitrage",
+    "security",
+    "institutional",
+    "smart-contracts"
+  ],
+  "author": "DeFi Security Engineer",
+  "license": "MIT",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.24.1"
+    "@typechain/ethers-v6": "^0.5.0",
+    "@typechain/hardhat": "^9.0.0",
+    "chai": "^4.3.7",
+    "ethers": "^6.8.1",
+    "hardhat": "^2.19.1",
+    "hardhat-gas-reporter": "^1.0.9",
+    "solidity-coverage": "^0.8.5",
+    "typechain": "^8.3.1"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.3.0",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0",
-    "glob": "^11.0.2",
-    "minimatch": "^10.0.1"
+    "@openzeppelin/contracts": "^5.0.0"
   }
 }
