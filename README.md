@@ -4,7 +4,7 @@
 Arya Singh
 
 ## Overview
-This project implements a robust, extensible, and secure flash loan arbitrage contract for UniswapV2-compatible DEXes (e.g., PancakeSwap). The contract is designed for the arbitrage route BUSD → CROX → CAKE → BUSD, but is modular for future expansion.
+This project implements a robust, extensible, and secure flash loan arbitrage contract for UniswapV2-compatible DEXes (e.g., PancakeSwap). The contract is designed for the arbitrage route BUSD → CROX → CAKE → BUSD, but is modular for future expansion.  
 
 ## ✨ Features
 - **UniswapV2Router02 Support:** Uses the latest router interface for maximum compatibility (including fee-on-transfer tokens).
