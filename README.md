@@ -1,5 +1,4 @@
-# FlashLoan Smart Contract (v1.1)     
->>>>>>> fee28a5cd2ee8d7a8a20f4de1f0880afed03ffdc
+
 # 🚀 FlashLoan DeFi Infrastructure
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -45,8 +44,7 @@ Multi-hop trades (BUSD → CROX → CAKE → BUSD) can be gas intensive. It is r
 - Monitor for out-of-gas errors, especially in volatile markets.
 
 ## 📄 License
-MIT
->>>>>>> fee28a5cd2ee8d7a8a20f4de1f0880afed03ffdc
+
 
 ---
 
