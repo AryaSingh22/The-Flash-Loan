@@ -38,7 +38,7 @@ This project implements a robust, extensible, and secure flash loan arbitrage co
 - Fixed safeApprove pattern for deployment reliability.
 - Renamed callback to `uniswapV2Call` for modularity.
 - Added token ordering validation and event logging.
-- Implemented owner-only emergencyWithdraw.
+- Implemented owner-only emergencyWithdraw.  
 - Added `simulateArbitrage()` view function for pre-trade estimation.
 - Documented gas usage considerations (see below).
 
