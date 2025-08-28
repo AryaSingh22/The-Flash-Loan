@@ -1,3 +1,5 @@
+# FlashLoan Smart Contract (v1.1)     
+>>>>>>> fee28a5cd2ee8d7a8a20f4de1f0880afed03ffdc
 # 🚀 FlashLoan DeFi Infrastructure
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -20,6 +22,31 @@ The **FlashLoan DeFi Infrastructure** is an institutional-grade, production-read
 - **🌐 Multi-Chain Ready**: Cross-chain deployment with state synchronization
 - **📊 Advanced Analytics**: On-chain performance tracking and risk monitoring
 - **⚡ MEV Protection**: Sophisticated frontrunning and sandwich attack resistance
+
+## 🔒 Security
+- Uses OpenZeppelin's SafeERC20 for all token transfers and approvals.
+- Implements a reentrancy guard on all critical functions.
+- Only the contract owner can perform emergency withdrawals.
+- Emits events for all major actions for transparency and off-chain monitoring.    
+
+## 🛠️ PRD v1.1 Enhancements
+- Switched to IUniswapV2Router02 for future extensibility.
+- Fixed safeApprove pattern for deployment reliability.
+- Renamed callback to `uniswapV2Call` for modularity.
+- Added token ordering validation and event logging.
+- Implemented owner-only emergencyWithdraw.  
+- Added `simulateArbitrage()` view function for pre-trade estimation.
+- Documented gas usage considerations (see below).
+
+## ⚡ Gas Usage Considerations
+Multi-hop trades (BUSD → CROX → CAKE → BUSD) can be gas intensive. It is recommended to:
+- Simulate trades off-chain before execution.
+- Set appropriate gas limits in front-end or deployment scripts.
+- Monitor for out-of-gas errors, especially in volatile markets.
+
+## 📄 License
+MIT
+>>>>>>> fee28a5cd2ee8d7a8a20f4de1f0880afed03ffdc
 
 ---
 
