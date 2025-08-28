@@ -31,7 +31,7 @@ This project implements a robust, extensible, and secure flash loan arbitrage co
 - Uses OpenZeppelin's SafeERC20 for all token transfers and approvals.
 - Implements a reentrancy guard on all critical functions.
 - Only the contract owner can perform emergency withdrawals.
-- Emits events for all major actions for transparency and off-chain monitoring.
+- Emits events for all major actions for transparency and off-chain monitoring.    
 
 ## 🛠️ PRD v1.1 Enhancements
 - Switched to IUniswapV2Router02 for future extensibility.
