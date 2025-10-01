@@ -6,7 +6,7 @@ import "../contracts/FlashLoanSecure.sol";
 import "../contracts/interfaces/IERC20.sol";
 import "./MaliciousContracts.sol"; 
  
-contract AdvancedSecurityTest is Test {
+contract AdvancedSecurityTest is Test { 
     FlashLoanSecure flashLoan;
     
     // Mock addresses for testing
