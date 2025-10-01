@@ -7,7 +7,7 @@ import "../contracts/interfaces/IERC20.sol";
 import "./MaliciousContracts.sol";    
   
 contract AdvancedSecurityTest is Test {   
-    FlashLoanSecure flashLoan;
+    FlashLoanSecure flashLoan; 
      
     // Mock addresses for testing 
     address constant FACTORY = address(0x1234); 
