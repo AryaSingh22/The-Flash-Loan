@@ -411,10 +411,10 @@ npx hardhat test test/AdvancedSecurity.t.sol
 
 ## 📞 Support & Contact
 
-- **📧 Email**: [your.email@example.com]
+- **📧 Email**: [singharya2209@gmail.com]
 - **🐛 Issues**: [GitHub Issues](https://github.com/AryaSingh22/The-Flash-Loan/issues)
 - **💬 Discussions**: [GitHub Discussions](https://github.com/AryaSingh22/The-Flash-Loan/discussions)
-- **📱 Twitter**: [@YourTwitterHandle]
+- **📱 Twitter**: [@ARYA_SINGH_BAIS]
 
 ---
 
