@@ -318,7 +318,7 @@ contract FlashLoanSecure is IUniswapV2Callee, ReentrancyGuard, Ownable2Step, Pau
         uint256 _amount0,
         uint256 _amount1,
         bytes calldata _data
-    ) external override nonReentrant {
+    ) external override {
         // Enhanced callback validation
         address token0 = IUniswapV2Pair(msg.sender).token0();
         address token1 = IUniswapV2Pair(msg.sender).token1();
