@@ -71,15 +71,18 @@ describe("FlashLoanInstitutional", function () {
     it("Should reject non-owner calls to admin functions", async function () {
       await expect(
         flashLoan.connect(attacker).setProtocolFee(200)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
+      .withArgs(attacker.address);
 
       await expect(
         flashLoan.connect(attacker).triggerCircuitBreaker("test")
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
+      .withArgs(attacker.address);
 
       await expect(
         flashLoan.connect(attacker).emergencyPause()
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
+      .withArgs(attacker.address);
     });
 
     it("Should implement 2-step ownership transfer", async function () {
@@ -203,7 +206,7 @@ describe("FlashLoanInstitutional", function () {
       
       await expect(
         flashLoan.connect(user).initiateFlashLoan(BUSD, parseEther("1000"), 500)
-      ).to.be.revertedWith("Pausable: paused");
+      ).to.be.revertedWithCustomError(flashLoan, "EnforcedPause");
     });
 
     it("Should allow owner to unpause contract", async function () {
