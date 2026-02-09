@@ -6,7 +6,7 @@ describe("FlashLoanPolygon Fork Test", function () {
   let flashLoan;
   let owner, user, feeRecipient;
   let usdc, weth, dai;
-  
+
   // Polygon Mainnet addresses
   const FACTORY = "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32"; // QuickSwap Factory
   const ROUTER = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"; // QuickSwap Router
@@ -21,16 +21,16 @@ describe("FlashLoanPolygon Fork Test", function () {
     if (network.name !== "hardhat") {
       this.skip();
     }
-    
+
     [owner, user, feeRecipient] = await ethers.getSigners();
-    
+
     // Get token contracts
     const ERC20ABI = [
       "function balanceOf(address) view returns (uint256)",
       "function approve(address, uint256) returns (bool)",
       "function transfer(address, uint256) returns (bool)"
     ];
-    
+
     usdc = new ethers.Contract(USDC_ADDRESS, ERC20ABI, owner);
     weth = new ethers.Contract(WETH_ADDRESS, ERC20ABI, owner);
     dai = new ethers.Contract(DAI_ADDRESS, ERC20ABI, owner);
@@ -48,7 +48,7 @@ describe("FlashLoanPolygon Fork Test", function () {
       CHAINLINK_ORACLE,
       feeRecipient.address
     );
-    await flashLoan.deployed();
+    await flashLoan.waitForDeployment();
   });
 
   describe("Real Flash Loan Execution", function () {
@@ -57,7 +57,7 @@ describe("FlashLoanPolygon Fork Test", function () {
       // 1. Impersonating an account with sufficient USDC balance
       // 2. Transferring USDC to the contract for insurance reserve
       // 3. Executing a real flash loan
-      
+
       // Example of how to impersonate an account (requires forking):
       /*
       const usdcHolder = "0x..."; // Address with USDC balance
@@ -85,7 +85,7 @@ describe("FlashLoanPolygon Fork Test", function () {
       const receipt = await tx.wait();
       console.log("Gas used:", receipt.gasUsed.toString());
       */
-      
+
       // Since we can't actually execute flash loans without proper setup,
       // we'll just verify the contract is properly configured
       expect(await flashLoan.USDC()).to.equal(USDC_ADDRESS);
@@ -99,11 +99,11 @@ describe("FlashLoanPolygon Fork Test", function () {
       // Deploy price oracle contract
       const PriceOraclePolygon = await ethers.getContractFactory("PriceOraclePolygon");
       const priceOracle = await PriceOraclePolygon.deploy();
-      await priceOracle.deployed();
-      
+      await priceOracle.waitForDeployment();
+
       // Add Chainlink oracle
       await priceOracle.addChainlinkOracle(USDC_ADDRESS, CHAINLINK_ORACLE);
-      
+
       // Try to get price (this might fail if the oracle is not working properly)
       try {
         const price = await priceOracle.getChainlinkPrice(USDC_ADDRESS);
@@ -119,8 +119,8 @@ describe("FlashLoanPolygon Fork Test", function () {
   describe("Multi-DEX Arbitrage Simulation", function () {
     it("Should simulate multi-DEX arbitrage", async function () {
       // Add supported routers
-      await flashLoan.addSupportedRouter("0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"); // SushiSwap
-      
+      await flashLoan.connect(feeRecipient).addSupportedRouter("0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"); // SushiSwap
+
       // In a real implementation, this would execute trades across multiple DEXs
       // For testing purposes, we just verify the function exists and is callable
       expect(await flashLoan.supportedRouters(ROUTER)).to.equal(true);
