@@ -1,48 +1,77 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { parseEther, parseUnits } = ethers.utils;
+const { parseEther, parseUnits } = ethers;
 
 describe("FlashLoanSecure Security Tests", function () {
   let flashLoan;
   let owner, user, attacker, feeRecipient;
+  let BUSD, WBNB, CROX, CAKE;
+  let mockFactory, mockRouter;
   
-  // Mock addresses (would be real addresses on mainnet fork)
-  const FACTORY = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"; // PCS Factory
-  const ROUTER = "0x10ED43C718714eb63d5aA57B78B54704E256024E"; // PCS Router
-  const BUSD = "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56";
-  const WBNB = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
-  const CROX = "0x2c094F5A7D1146BB93850f629501eB749f6Ed491";
-  const CAKE = "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82";
-
   beforeEach(async function () {
     [owner, user, attacker, feeRecipient] = await ethers.getSigners();
 
+    const MockERC20 = await ethers.getContractFactory("MockERC20");
+    const busdToken = await MockERC20.deploy("BUSD", "BUSD");
+    await busdToken.waitForDeployment();
+    BUSD = busdToken.target;
+
+    const wbnbToken = await MockERC20.deploy("WBNB", "WBNB");
+    await wbnbToken.waitForDeployment();
+    WBNB = wbnbToken.target;
+
+    const croxToken = await MockERC20.deploy("CROX", "CROX");
+    await croxToken.waitForDeployment();
+    CROX = croxToken.target;
+
+    const cakeToken = await MockERC20.deploy("CAKE", "CAKE");
+    await cakeToken.waitForDeployment();
+    CAKE = cakeToken.target;
+
+    // Deploy Mock Factory and Router
+    const MockFactory = await ethers.getContractFactory("MockUniswapV2Factory");
+    mockFactory = await MockFactory.deploy();
+    await mockFactory.waitForDeployment();
+
+    const MockRouter = await ethers.getContractFactory("MockUniswapV2Router");
+    mockRouter = await MockRouter.deploy(mockFactory.target);
+    await mockRouter.waitForDeployment();
+
+    // Create Pairs
+    await mockFactory.createPair(BUSD, WBNB);
+    await mockFactory.createPair(BUSD, CROX);
+    await mockFactory.createPair(CROX, CAKE);
+    await mockFactory.createPair(CAKE, BUSD);
+
     const FlashLoanSecure = await ethers.getContractFactory("FlashLoanSecure");
     flashLoan = await FlashLoanSecure.deploy(
-      FACTORY,
-      ROUTER,
+      mockFactory.target,
+      mockRouter.target,
       BUSD,
       WBNB,
       CROX,
       CAKE,
       feeRecipient.address
     );
-    await flashLoan.deployed();
+    await flashLoan.waitForDeployment();
   });
 
   describe("Access Control Tests", function () {
     it("Should reject non-owner calls to admin functions", async function () {
       await expect(
         flashLoan.connect(attacker).setProtocolFee(200)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
+      .withArgs(attacker.address);
 
       await expect(
         flashLoan.connect(attacker).pause()
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
+      .withArgs(attacker.address);
 
       await expect(
         flashLoan.connect(attacker).emergencyWithdraw(BUSD)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
+      .withArgs(attacker.address);
     });
 
     it("Should implement 2-step ownership transfer", async function () {
@@ -56,7 +85,7 @@ describe("FlashLoanSecure Security Tests", function () {
 
     it("Should validate fee recipient address", async function () {
       await expect(
-        flashLoan.setFeeRecipient(ethers.constants.AddressZero)
+        flashLoan.setFeeRecipient(ethers.ZeroAddress)
       ).to.be.revertedWithCustomError(flashLoan, "InvalidFeeRecipient");
     });
   });
@@ -93,7 +122,7 @@ describe("FlashLoanSecure Security Tests", function () {
 
     it("Should protect against zero address in getBalanceOfToken", async function () {
       await expect(
-        flashLoan.getBalanceOfToken(ethers.constants.AddressZero)
+        flashLoan.getBalanceOfToken(ethers.ZeroAddress)
       ).to.be.revertedWith("Invalid token address");
     });
   });
@@ -102,27 +131,36 @@ describe("FlashLoanSecure Security Tests", function () {
     it("Should enforce daily volume limits", async function () {
       await flashLoan.setMaxDailyVolume(parseEther("1000"));
 
+      // 1001 will fail InvalidAmount because MAX_LOAN_AMOUNT is 1000.
+      // So we need to accumulate volume.
+
+      // First transaction: 900 (OK)
+      await flashLoan.connect(user).initiateArbitrage(BUSD, parseEther("900"), 500);
+
+      // Second transaction: 200 (Total 1100 > 1000)
       await expect(
-        flashLoan.connect(user).initiateArbitrage(BUSD, parseEther("1001"), 500)
+        flashLoan.connect(user).initiateArbitrage(BUSD, parseEther("200"), 500)
       ).to.be.revertedWithCustomError(flashLoan, "DailyLimitExceeded");
     });
 
     it("Should reset daily volume after 24 hours", async function () {
       await flashLoan.setMaxDailyVolume(parseEther("1000"));
       
+      await flashLoan.connect(user).initiateArbitrage(BUSD, parseEther("900"), 500);
+
       // Fast forward 1 day + 1 second
       await network.provider.send("evm_increaseTime", [86401]);
       await network.provider.send("evm_mine");
 
-      // Should work now (will fail for other reasons, but not daily limit)
+      // Should work now and be profitable with new mocks
       await expect(
-        flashLoan.connect(user).initiateArbitrage(BUSD, parseEther("999"), 500)
-      ).to.be.revertedWithCustomError(flashLoan, "PairNotFound");
+        flashLoan.connect(user).initiateArbitrage(BUSD, parseEther("200"), 500)
+      ).to.not.be.reverted;
     });
 
     it("Should track daily volume usage", async function () {
       const [used, max, resetTime] = await flashLoan.getDailyVolumeUsage();
-      expect(used).to.equal(0);
+      expect(used).to.equal(0n);
       expect(max).to.equal(parseEther("10000")); // Default max
       expect(resetTime).to.be.gt(0);
     });
@@ -135,7 +173,7 @@ describe("FlashLoanSecure Security Tests", function () {
 
       await expect(
         flashLoan.connect(user).initiateArbitrage(BUSD, parseEther("1000"), 500)
-      ).to.be.revertedWith("Pausable: paused");
+      ).to.be.revertedWithCustomError(flashLoan, "EnforcedPause");
 
       await flashLoan.unpause();
       expect(await flashLoan.paused()).to.be.false;
@@ -147,9 +185,15 @@ describe("FlashLoanSecure Security Tests", function () {
       ).to.be.reverted; // Should fail when not paused
 
       await flashLoan.pause();
+
+      // Mint tokens to contract so there is balance
+      const MockERC20 = await ethers.getContractFactory("MockERC20");
+      const busd = MockERC20.attach(BUSD);
+      await busd.mint(flashLoan.target, parseEther("100"));
+
       await expect(
         flashLoan.emergencyWithdraw(BUSD)
-      ).to.be.revertedWith("No balance to withdraw"); // Fails due to no balance, but passes pause check
+      ).to.emit(flashLoan, "EmergencyWithdraw").withArgs(BUSD, parseEther("100"));
     });
   });
 
@@ -171,46 +215,31 @@ describe("FlashLoanSecure Security Tests", function () {
   });
 
   describe("Callback Security Tests", function () {
-    it("Should reject unauthorized callback calls", async function () {
-      const mockData = ethers.utils.defaultAbiCoder.encode(
-        ["address", "uint256", "address", "uint256", "uint256"],
-        [BUSD, parseEther("1000"), attacker.address, 500, 1000000]
-      );
-
-      await expect(
-        flashLoan.connect(attacker).uniswapV2Call(
-          flashLoan.address,
-          parseEther("1000"),
-          0,
-          mockData
-        )
-      ).to.be.revertedWithCustomError(flashLoan, "UnauthorizedCallback");
-    });
+      // Tested in Attack Scenario Tests with proper contract call
   });
 
   describe("Simulation Tests", function () {
     it("Should return zero for invalid simulation inputs", async function () {
       // Wrong token
       let result = await flashLoan.simulateArbitrage(CAKE, parseEther("1000"), 500);
-      expect(result.estimatedProfit).to.equal(0);
+      expect(result.estimatedProfit).to.equal(0n);
 
       // Zero amount
       result = await flashLoan.simulateArbitrage(BUSD, 0, 500);
-      expect(result.estimatedProfit).to.equal(0);
+      expect(result.estimatedProfit).to.equal(0n);
 
       // High slippage
       result = await flashLoan.simulateArbitrage(BUSD, parseEther("1000"), 10001);
-      expect(result.estimatedProfit).to.equal(0);
+      expect(result.estimatedProfit).to.equal(0n);
     });
 
     it("Should calculate fees correctly", async function () {
       const amount = parseEther("1000");
-      const expectedFee = amount.mul(30).div(997).add(1);
+      const expectedFee = (amount * 30n) / 997n + 1n;
       
       const result = await flashLoan.simulateArbitrage(BUSD, amount, 500);
-      const expectedRepay = amount.add(expectedFee);
+      const expectedRepay = amount + expectedFee;
       
-      // Will be zero due to missing pairs, but repayAmount calculation should be correct
       expect(result.estimatedRepayAmount).to.equal(expectedRepay);
     });
   });
@@ -223,7 +252,8 @@ describe("FlashLoanSecure Security Tests", function () {
     it("Should reject non-owner approval refresh", async function () {
       await expect(
         flashLoan.connect(attacker).refreshApprovals()
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
+      .withArgs(attacker.address);
     });
   });
 
@@ -243,8 +273,6 @@ describe("FlashLoanSecure Security Tests", function () {
 
   describe("Event Emission Tests", function () {
     it("Should emit comprehensive events", async function () {
-      // This would need mainnet fork to fully test
-      // Here we test that the function exists and has correct signature
       const iface = flashLoan.interface;
       
       expect(iface.getEvent("ArbitrageStarted")).to.exist;
@@ -257,8 +285,6 @@ describe("FlashLoanSecure Security Tests", function () {
 
   describe("Gas Optimization Tests", function () {
     it("Should track gas usage in events", async function () {
-      // Would need mainnet fork to test actual gas usage
-      // Here we verify the event structure includes gas tracking
       const iface = flashLoan.interface;
       const event = iface.getEvent("ArbitrageCompleted");
       
@@ -268,8 +294,8 @@ describe("FlashLoanSecure Security Tests", function () {
 
   describe("Integration Tests", function () {
     it("Should have correct constructor initialization", async function () {
-      expect(await flashLoan.factory()).to.equal(FACTORY);
-      expect(await flashLoan.router()).to.equal(ROUTER);
+      expect(await flashLoan.factory()).to.equal(mockFactory.target);
+      expect(await flashLoan.router()).to.equal(mockRouter.target);
       expect(await flashLoan.BUSD()).to.equal(BUSD);
       expect(await flashLoan.WBNB()).to.equal(WBNB);
       expect(await flashLoan.CROX()).to.equal(CROX);
@@ -283,7 +309,7 @@ describe("FlashLoanSecure Security Tests", function () {
       expect(await flashLoan.protocolFeeBps()).to.equal(100); // 1%
       
       const [dailyUsed, maxDaily,] = await flashLoan.getDailyVolumeUsage();
-      expect(dailyUsed).to.equal(0);
+      expect(dailyUsed).to.equal(0n);
       expect(maxDaily).to.equal(parseEther("10000"));
     });
   });
@@ -293,34 +319,80 @@ describe("FlashLoanSecure Security Tests", function () {
 describe("Attack Scenario Tests", function () {
   let flashLoan, reentrancyAttacker;
   let owner, attacker, feeRecipient;
+  let BUSD, WBNB, CROX, CAKE;
+  let mockFactory, mockRouter;
 
   beforeEach(async function () {
     [owner, attacker, feeRecipient] = await ethers.getSigners();
 
+    const MockERC20 = await ethers.getContractFactory("MockERC20");
+    const busdToken = await MockERC20.deploy("BUSD", "BUSD");
+    await busdToken.waitForDeployment();
+    BUSD = busdToken.target;
+
+    const wbnbToken = await MockERC20.deploy("WBNB", "WBNB");
+    await wbnbToken.waitForDeployment();
+    WBNB = wbnbToken.target;
+
+    const croxToken = await MockERC20.deploy("CROX", "CROX");
+    await croxToken.waitForDeployment();
+    CROX = croxToken.target;
+
+    const cakeToken = await MockERC20.deploy("CAKE", "CAKE");
+    await cakeToken.waitForDeployment();
+    CAKE = cakeToken.target;
+
+    // Deploy Mock Factory and Router
+    const MockFactory = await ethers.getContractFactory("MockUniswapV2Factory");
+    mockFactory = await MockFactory.deploy();
+    await mockFactory.waitForDeployment();
+
+    const MockRouter = await ethers.getContractFactory("MockUniswapV2Router");
+    mockRouter = await MockRouter.deploy(mockFactory.target);
+    await mockRouter.waitForDeployment();
+
+    // Create Pairs
+    await mockFactory.createPair(BUSD, WBNB);
+    await mockFactory.createPair(BUSD, CROX);
+    await mockFactory.createPair(CROX, CAKE);
+    await mockFactory.createPair(CAKE, BUSD);
+
     const FlashLoanSecure = await ethers.getContractFactory("FlashLoanSecure");
     flashLoan = await FlashLoanSecure.deploy(
-      "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73", // FACTORY
-      "0x10ED43C718714eb63d5aA57B78B54704E256024E", // ROUTER
-      "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56", // BUSD
-      "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", // WBNB
-      "0x2c094F5A7D1146BB93850f629501eB749f6Ed491", // CROX
-      "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", // CAKE
+      mockFactory.target,
+      mockRouter.target,
+      BUSD,
+      WBNB,
+      CROX,
+      CAKE,
       feeRecipient.address
     );
-    await flashLoan.deployed();
+    await flashLoan.waitForDeployment();
 
     // Deploy attack contract
     const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
-    reentrancyAttacker = await ReentrancyAttacker.deploy(flashLoan.address);
-    await reentrancyAttacker.deployed();
+    reentrancyAttacker = await ReentrancyAttacker.deploy(flashLoan.target);
+    await reentrancyAttacker.waitForDeployment();
+  });
+
+  it("Should reject unauthorized callback calls", async function () {
+    const FlashLoanCallbackAttacker = await ethers.getContractFactory("FlashLoanCallbackAttacker");
+    const callbackAttacker = await FlashLoanCallbackAttacker.deploy(flashLoan.target);
+    await callbackAttacker.waitForDeployment();
+
+    // Call attackCallback which calls uniswapV2Call on FlashLoanSecure
+    // Since callbackAttacker is not a valid pair, it should revert with UnauthorizedCallback
+    await expect(
+        callbackAttacker.attackCallback()
+    ).to.be.revertedWithCustomError(flashLoan, "UnauthorizedCallback");
   });
 
   it("Should prevent reentrancy attacks", async function () {
-    // This would need more sophisticated setup on mainnet fork
-    // For now, we test that the ReentrancyGuard is in place
-    expect(await flashLoan.paused()).to.be.false; // Contract is functional
+    expect(await flashLoan.paused()).to.be.false;
     
-    // The actual reentrancy test would require mainnet fork
-    // and proper liquidity setup to trigger the callback
+    // Attempt reentrancy
+    // Note: To truly test this we need the attack contract to be called during execution.
+    // Since we are using Mocks, we can try to trigger it via MockPair if we configured it.
+    // For now, we just ensure it deploys and basic state is correct as per original test intent.
   });
 });

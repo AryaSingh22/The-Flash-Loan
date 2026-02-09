@@ -317,6 +317,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+## 📞 Support & Contact
+
+- **📧 Email**: [singharya2209@gmail.com]
+- **🐛 Issues**: [GitHub Issues](https://github.com/AryaSingh22/The-Flash-Loan/issues)
+- **💬 Discussions**: [GitHub Discussions](https://github.com/AryaSingh22/The-Flash-Loan/discussions)
+- **📱 Twitter**: [@ARYA_SINGH_BAIS]
+
+---
+
+
 <div align="center">
 
 **Built with ❤️ for the DeFi Community**

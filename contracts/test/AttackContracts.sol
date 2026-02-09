@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../contracts/FlashLoanSecure.sol";
-import "../contracts/interfaces/IERC20.sol";
+import "../FlashLoanSecure.sol";
 
 /**
  * @title AttackContract
@@ -35,7 +34,7 @@ contract ReentrancyAttacker {
         uint256,
         bytes calldata
     ) external {
-        attack();
+        this.attack();
     }
 }
 
@@ -45,9 +44,19 @@ contract ReentrancyAttacker {
  */
 contract FlashLoanCallbackAttacker {
     FlashLoanSecure public target;
+    address public constant BUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
+    address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     
     constructor(address _target) {
         target = FlashLoanSecure(_target);
+    }
+
+    function token0() external pure returns (address) {
+        return BUSD;
+    }
+
+    function token1() external pure returns (address) {
+        return WBNB;
     }
     
     function attackCallback() external {
@@ -57,7 +66,7 @@ contract FlashLoanCallbackAttacker {
             1000e18,
             0,
             abi.encode(
-                0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56, // BUSD
+                BUSD,
                 1000e18,
                 address(this),
                 500,
