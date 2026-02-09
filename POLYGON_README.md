@@ -3,41 +3,39 @@
 [![Hardhat](https://img.shields.io/badge/Hardhat-2.26.3-orange.svg)](https://hardhat.org/)
 [![Polygon](https://img.shields.io/badge/Polygon-137-blueviolet.svg)](https://polygon.technology/)
 
-# 🚀 Flash Loan Arbitrage Bot for Polygon
+# Flash Loan Arbitrage Bot for Polygon
 
-This project is an institutional-grade flash loan arbitrage system specifically designed for the Polygon network. It enables capital-efficient trading without upfront funds by leveraging flash loans across multiple DEXs including QuickSwap and SushiSwap.
+This project is a refactored version of the original Flash Loan project, specifically designed for the Polygon network. It includes smart contracts optimized for Polygon's architecture, a monitoring bot, and comprehensive testing suites.
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Smart Contracts](#smart-contracts)
-- [Bot Implementation](#bot-implementation)
-- [Installation](#installation)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Risk Management](#risk-management)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
-- [Disclaimer](#disclaimer)
+1. [Overview](#overview)
+2. [Architecture](#architecture)
+3. [Smart Contracts](#smart-contracts)
+4. [Bot Implementation](#bot-implementation)
+5. [Installation](#installation)
+6. [Testing](#testing)
+7. [Deployment](#deployment)
+8. [Configuration](#configuration)
+9. [Usage](#usage)
+10. [Risk Management](#risk-management)
+11. [Troubleshooting](#troubleshooting)
+12. [Contributing](#contributing)
+13. [License](#license)
+14. [Disclaimer](#disclaimer)
 
-## 🔍 Overview
+## Overview
 
-The Flash Loan Arbitrage Bot for Polygon enables automated arbitrage opportunities across Polygon's DEX ecosystem. The system is optimized for Polygon's lower gas costs and faster block times while maintaining enterprise-grade security features.
+This project enables flash loan arbitrage opportunities on Polygon's DEXs including QuickSwap and SushiSwap. The system is optimized for Polygon's lower gas costs and faster block times while maintaining enterprise-grade security features.
 
-### Key Features
+Key features:
+- Multi-DEX arbitrage support
+- Chainlink oracle integration
+- Risk management with circuit breakers
+- Gas optimization for Polygon
+- Comprehensive testing suite
 
-- **Multi-DEX Arbitrage**: Supports QuickSwap, SushiSwap, and other Polygon DEXs
-- **Real-time Monitoring**: Node.js/TypeScript bot for continuous opportunity scanning
-- **Risk Management**: Circuit breakers, daily volume limits, and asset risk configurations
-- **Gas Optimization**: Optimized for Polygon's lower transaction costs
-- **Oracle Integration**: Chainlink price feeds for secure price validation
-- **Enterprise Security**: Reentrancy protection, 2-step ownership, and pausable functionality
-
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -58,7 +56,7 @@ graph TD
 4. **Arbitrage Bot**: JavaScript/TypeScript implementation for monitoring and execution
 5. **Deployment Scripts**: Scripts for Mumbai testnet and Polygon mainnet
 
-## 📄 Smart Contracts
+## Smart Contracts
 
 ### FlashLoanPolygon.sol
 
@@ -83,7 +81,7 @@ Price oracle contract that provides pricing information from multiple DEXs:
 
 Mock Chainlink oracle for testing purposes on Mumbai testnet.
 
-## 🤖 Bot Implementation
+## Bot Implementation
 
 The arbitrage bot is implemented in both JavaScript and TypeScript:
 
@@ -93,7 +91,7 @@ The arbitrage bot is implemented in both JavaScript and TypeScript:
 - **Auto-execution**: Automatically executes profitable trades
 - **Risk Management**: Stops execution when gas costs exceed potential profits
 
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 
@@ -117,7 +115,7 @@ npm install
 cd ..
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Unit Tests
 
@@ -146,7 +144,7 @@ npx hardhat coverage
 REPORT_GAS=true npx hardhat test
 ```
 
-## 📦 Deployment
+## Deployment
 
 ### Mumbai Testnet
 
@@ -169,7 +167,7 @@ npx hardhat run scripts/deploy-polygon.js --network polygon
 npx hardhat verify --network polygon <contract-address> <constructor-args>
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -202,7 +200,7 @@ The project is configured to work with the following networks:
    - Chain ID: 80001
    - RPC URL: https://rpc-mumbai.maticvigil.com/
 
-## 📈 Usage
+## Usage
 
 ### 1. Compile Contracts
 
@@ -238,7 +236,7 @@ The bot will output logs showing:
 - Arbitrage opportunities found
 - Transaction execution results
 
-## 🛡️ Risk Management
+## Risk Management
 
 ### Slippage Protection
 
@@ -257,7 +255,7 @@ Circuit breakers automatically pause the system when abnormal conditions are det
 - **Maximum Recursion Depth**: 3 levels
 - **Asset-Specific Risk Configurations**: Per-token limits and risk scores
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -285,7 +283,7 @@ Circuit breakers automatically pause the system when abnormal conditions are det
 DEBUG=flashloan:* npm start
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -300,11 +298,11 @@ DEBUG=flashloan:* npm start
 - **Testing**: Minimum 95% code coverage required
 - **Documentation**: All functions must include NatSpec comments
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 **IMPORTANT**: This software is provided "as is" without warranty. Flash loan arbitrage involves significant financial risks including:
 

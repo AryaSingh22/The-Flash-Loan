@@ -9,6 +9,8 @@
     "deploy": "hardhat run scripts/deploy-institutional.js",
     "deploy:testnet": "hardhat run scripts/deploy-institutional.js --network bscTestnet",
     "deploy:mainnet": "hardhat run scripts/deploy-institutional.js --network bsc",
+    "deploy:mumbai": "hardhat run scripts/deploy-polygon-mumbai.js --network mumbai",
+    "deploy:polygon": "hardhat run scripts/deploy-polygon.js --network polygon",
     "verify": "hardhat verify",
     "coverage": "hardhat coverage",
     "gas": "REPORT_GAS=true hardhat test",
@@ -21,7 +23,9 @@
     "arbitrage",
     "security",
     "institutional",
-    "smart-contracts"
+    "smart-contracts",
+    "polygon",
+    "matic"
   ],
   "author": "DeFi Security Engineer",
   "license": "MIT",
@@ -31,12 +35,14 @@
     "@typechain/hardhat": "^9.0.0",
     "chai": "^4.3.7",
     "ethers": "^6.8.1",
-    "hardhat": "^2.19.1",
+    "hardhat": "^2.26.3",
     "hardhat-gas-reporter": "^1.0.9",
     "solidity-coverage": "^0.8.5",
     "typechain": "^8.3.1"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.0"
+    "@openzeppelin/contracts": "^5.0.0",
+    "@uniswap/sdk-core": "^5.0.0",
+    "@uniswap/v3-sdk": "^3.10.0"
   }
 }

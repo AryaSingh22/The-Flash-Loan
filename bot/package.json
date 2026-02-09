@@ -1,0 +1,27 @@
+{
+  "name": "flashloan-arbitrage-bot",
+  "version": "1.0.0",
+  "description": "Polygon flash loan arbitrage bot",
+  "main": "arbitrage-bot.js",
+  "scripts": {
+    "start": "node arbitrage-bot.js",
+    "dev": "nodemon arbitrage-bot.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "defi",
+    "arbitrage",
+    "flash-loan",
+    "polygon",
+    "matic"
+  ],
+  "author": "DeFi Developer",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^5.7.0",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
