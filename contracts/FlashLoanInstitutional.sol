@@ -37,9 +37,10 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
     address public immutable WBNB;
     address public immutable CROX;
     address public immutable CAKE;
-    address public immutable chainlinkOracle;
+
     
     // ============ MUTABLE STORAGE ============
+    mapping(address => address) public tokenOracles;
     address public feeRecipient;
     uint256 public protocolFeeBps = PROTOCOL_FEE_BPS;
     uint256 public dailyVolumeUsed;
@@ -104,7 +105,8 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
         WBNB = _WBNB;
         CROX = _CROX;
         CAKE = _CAKE;
-        chainlinkOracle = _chainlinkOracle;
+
+        tokenOracles[BUSD] = _chainlinkOracle; // Set default oracle for BUSD
         feeRecipient = _feeRecipient;
         
         lastVolumeResetTime = block.timestamp;
@@ -150,7 +152,7 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
         emit FlashLoanInitiated(_token, _amount, msg.sender, _slippageBps);
         
         // Execute flash loan
-        _executeFlashLoan(pair, _token, _amount, _slippageBps, gasStart);
+        _executeFlashLoan(pair, _token, _amount, _slippageBps, gasStart, msg.sender);
         
         // Decrement recursion depth
         userRecursionDepth[msg.sender]--;
@@ -161,7 +163,7 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
         uint256 _amount0,
         uint256 _amount1,
         bytes calldata _data
-    ) external override nonReentrant {
+    ) external override {
         // Validate callback
         address token0 = IUniswapV2Pair(msg.sender).token0();
         address token1 = IUniswapV2Pair(msg.sender).token1();
@@ -171,35 +173,36 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
         if (_sender != address(this)) revert UnauthorizedCallback();
         
         // Decode parameters
-        (address token, uint256 amount, uint256 slippageBps, uint256 gasStart) = 
-            abi.decode(_data, (address, uint256, uint256, uint256));
+        (address token, uint256 amount, uint256 slippageBps, uint256 gasStart, address initiator) = 
+            abi.decode(_data, (address, uint256, uint256, uint256, address));
         
         // Calculate fees
         uint256 flashLoanFee = (amount * FLASH_LOAN_FEE_BPS) / BASIS_POINTS;
         uint256 repayAmount = amount + flashLoanFee;
         
         // Execute arbitrage
-        uint256 profit = _executeArbitrage(token, amount, slippageBps);
+        uint256 grossRevenue = _executeArbitrage(token, amount, slippageBps);
         
-        if (profit <= flashLoanFee) {
-            _handleFailedLoan(token, amount, "Insufficient profit");
-            return;
+        if (grossRevenue <= repayAmount) {
+            revert ArbitrageNotProfitable();
         }
         
+        uint256 actualProfit = grossRevenue - repayAmount;
+        
         // Calculate protocol fee
-        uint256 protocolFee = (profit * protocolFeeBps) / BASIS_POINTS;
-        uint256 netProfit = profit - protocolFee;
+        uint256 protocolFee = (actualProfit * protocolFeeBps) / BASIS_POINTS;
+        uint256 netProfit = actualProfit - protocolFee;
         
         // Transfer profits
         if (netProfit > 0) {
-            IERC20(token).safeTransfer(msg.sender, netProfit);
+            IERC20(token).safeTransfer(initiator, netProfit);
         }
         if (protocolFee > 0) {
             IERC20(token).safeTransfer(feeRecipient, protocolFee);
         }
         
         // Emit completion event
-        emit FlashLoanCompleted(token, amount, flashLoanFee, profit, msg.sender);
+        emit FlashLoanCompleted(token, amount, flashLoanFee, actualProfit, msg.sender);
         
         // Repay flash loan
         IERC20(token).safeTransfer(msg.sender, repayAmount);
@@ -208,7 +211,9 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
     // ============ ORACLE & RISK MANAGEMENT ============
     
     function getValidatedPrice(address token) public view returns (uint256) {
-        try IAggregatorV3(chainlinkOracle).latestRoundData() returns (
+        address oracle = tokenOracles[token];
+        if (oracle == address(0)) revert("Oracle not set");
+        try IAggregatorV3(oracle).latestRoundData() returns (
             uint80 roundId,
             int256 price,
             uint256 startedAt,
@@ -224,6 +229,11 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
         }
     }
     
+    function setTokenOracle(address token, address oracle) external onlyOwner {
+        require(token != address(0) && oracle != address(0), "Invalid address");
+        tokenOracles[token] = oracle;
+    }
+
     function updateAssetRiskConfig(
         address asset,
         uint256 maxLoanAmount,
@@ -326,6 +336,8 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
             uint256 deviation = _calculatePriceDeviation(currentPrice, lastPrice);
             if (deviation > ORACLE_DEVIATION_THRESHOLD) {
                 emit CircuitBreakerTriggered("Price anomaly", ORACLE_DEVIATION_THRESHOLD, deviation);
+                circuitBreakerActive = true; 
+                revert("Price anomaly detected");
             }
         }
         
@@ -342,14 +354,14 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
         }
     }
     
-    function _executeFlashLoan(address pair, address token, uint256 amount, uint256 slippageBps, uint256 gasStart) private {
+    function _executeFlashLoan(address pair, address token, uint256 amount, uint256 slippageBps, uint256 gasStart, address initiator) private {
         address token0 = IUniswapV2Pair(pair).token0();
         address token1 = IUniswapV2Pair(pair).token1();
         
         uint256 amount0Out = token == token0 ? amount : 0;
         uint256 amount1Out = token == token1 ? amount : 0;
         
-        bytes memory data = abi.encode(token, amount, slippageBps, gasStart);
+        bytes memory data = abi.encode(token, amount, slippageBps, gasStart, initiator);
         IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data);
     }
     
@@ -386,20 +398,7 @@ contract FlashLoanInstitutional is IUniswapV2Callee, ReentrancyGuard, Ownable2St
         return balanceAfter - balanceBefore;
     }
     
-    function _handleFailedLoan(address token, uint256 amount, string memory reason) private {
-        emit FlashLoanFailed(token, amount, msg.sender, reason);
-        
-        // Use insurance reserve if available
-        if (insuranceReserveBalance > 0) {
-            uint256 flashLoanFee = (amount * FLASH_LOAN_FEE_BPS) / BASIS_POINTS;
-            uint256 repayAmount = amount + flashLoanFee;
-            
-            if (insuranceReserveBalance >= repayAmount) {
-                insuranceReserveBalance -= repayAmount;
-                IERC20(token).safeTransfer(msg.sender, repayAmount);
-            }
-        }
-    }
+
     
     function _calculatePriceDeviation(uint256 price1, uint256 price2) private pure returns (uint256) {
         if (price1 == 0 || price2 == 0) return type(uint256).max;

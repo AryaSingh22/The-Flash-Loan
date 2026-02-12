@@ -7,7 +7,7 @@ import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IUniswapV2Callee.sol";             
 import "./libraries/UniswapV2Library.sol";    
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"; 
-import "hardhat/console.sol";          
+          
   
 /** 
  * @title FlashLoan
@@ -154,7 +154,7 @@ contract FlashLoan is IUniswapV2Callee {
      * @param _amount Amount to borrow
      * @param _slippageBps Slippage tolerance in basis points
      */
-    function initiateArbitrage(address _busdBorrow, uint _amount, uint _slippageBps) external nonReentrant {
+    function initiateArbitrage(address _busdBorrow, uint _amount, uint _slippageBps) external onlyOwner nonReentrant {
         // Validation checks
         require(_busdBorrow == BUSD, "Can only borrow BUSD");
         require(_amount > 0, "Amount must be greater than 0");
@@ -197,7 +197,7 @@ contract FlashLoan is IUniswapV2Callee {
         uint256 _amount0,
         uint256 _amount1,
         bytes calldata _data
-    ) external override nonReentrant {
+    ) external override {
         address token0 = IUniswapV2Pair(msg.sender).token0();
         address token1 = IUniswapV2Pair(msg.sender).token1();
         address pair = IUniswapV2Factory(factory).getPair(token0, token1);

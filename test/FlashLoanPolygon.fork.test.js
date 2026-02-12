@@ -58,33 +58,7 @@ describe("FlashLoanPolygon Fork Test", function () {
       // 2. Transferring USDC to the contract for insurance reserve
       // 3. Executing a real flash loan
 
-      // Example of how to impersonate an account (requires forking):
-      /*
-      const usdcHolder = "0x..."; // Address with USDC balance
-      await network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [usdcHolder],
-      });
-      
-      const impersonatedSigner = await ethers.getSigner(usdcHolder);
-      const holderUSDC = usdc.connect(impersonatedSigner);
-      
-      // Transfer USDC to our contract for insurance reserve
-      await holderUSDC.transfer(flashLoan.address, parseUnits("1000", 6));
-      
-      // Add to insurance reserve
-      await flashLoan.connect(owner).addToInsuranceReserve(parseUnits("1000", 6));
-      
-      // Execute flash loan
-      const tx = await flashLoan.connect(user).initiateFlashLoan(
-        USDC_ADDRESS,
-        parseUnits("1000", 6),
-        500 // 5% slippage
-      );
-      
-      const receipt = await tx.wait();
-      console.log("Gas used:", receipt.gasUsed.toString());
-      */
+
 
       // Since we can't actually execute flash loans without proper setup,
       // we'll just verify the contract is properly configured
@@ -107,7 +81,7 @@ describe("FlashLoanPolygon Fork Test", function () {
       // Try to get price (this might fail if the oracle is not working properly)
       try {
         const price = await priceOracle.getChainlinkPrice(USDC_ADDRESS);
-        console.log("USDC Price:", price.toString());
+
         expect(price).to.be.gt(0);
       } catch (error) {
         // Oracle might not be working, which is expected in test environment

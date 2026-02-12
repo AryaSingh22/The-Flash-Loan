@@ -5,7 +5,7 @@ const { parseEther, parseUnits } = ethers;
 describe("FlashLoanInstitutional", function () {
   let flashLoan;
   let owner, user, attacker, feeRecipient;
-  
+
   // Mock addresses for testing
   const FACTORY = "0x1234567890123456789012345678901234567890";
   const ROUTER = "0x2345678901234567890123456789012345678901";
@@ -40,7 +40,7 @@ describe("FlashLoanInstitutional", function () {
       expect(await flashLoan.WBNB()).to.equal(WBNB);
       expect(await flashLoan.CROX()).to.equal(CROX);
       expect(await flashLoan.CAKE()).to.equal(CAKE);
-      expect(await flashLoan.chainlinkOracle()).to.equal(CHAINLINK_ORACLE);
+      expect(await flashLoan.tokenOracles(BUSD)).to.equal(CHAINLINK_ORACLE);
       expect(await flashLoan.feeRecipient()).to.equal(feeRecipient.address);
       expect(await flashLoan.owner()).to.equal(owner.address);
     });
@@ -72,17 +72,17 @@ describe("FlashLoanInstitutional", function () {
       await expect(
         flashLoan.connect(attacker).setProtocolFee(200)
       ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
-      .withArgs(attacker.address);
+        .withArgs(attacker.address);
 
       await expect(
         flashLoan.connect(attacker).triggerCircuitBreaker("test")
       ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
-      .withArgs(attacker.address);
+        .withArgs(attacker.address);
 
       await expect(
         flashLoan.connect(attacker).emergencyPause()
       ).to.be.revertedWithCustomError(flashLoan, "OwnableUnauthorizedAccount")
-      .withArgs(attacker.address);
+        .withArgs(attacker.address);
     });
 
     it("Should implement 2-step ownership transfer", async function () {
@@ -136,7 +136,7 @@ describe("FlashLoanInstitutional", function () {
 
     it("Should prevent flash loans when circuit breaker is active", async function () {
       await flashLoan.triggerCircuitBreaker("Test reason");
-      
+
       await expect(
         flashLoan.connect(user).initiateFlashLoan(BUSD, parseEther("1000"), 500)
       ).to.be.revertedWithCustomError(flashLoan, "CircuitBreakerActive");
@@ -145,7 +145,7 @@ describe("FlashLoanInstitutional", function () {
     it("Should allow owner to reset circuit breaker", async function () {
       await flashLoan.triggerCircuitBreaker("Test reason");
       expect(await flashLoan.circuitBreakerActive()).to.equal(true);
-      
+
       await flashLoan.resetCircuitBreaker();
       expect(await flashLoan.circuitBreakerActive()).to.equal(false);
     });
@@ -203,7 +203,7 @@ describe("FlashLoanInstitutional", function () {
 
     it("Should prevent flash loans when paused", async function () {
       await flashLoan.emergencyPause();
-      
+
       await expect(
         flashLoan.connect(user).initiateFlashLoan(BUSD, parseEther("1000"), 500)
       ).to.be.revertedWithCustomError(flashLoan, "EnforcedPause");
@@ -212,7 +212,7 @@ describe("FlashLoanInstitutional", function () {
     it("Should allow owner to unpause contract", async function () {
       await flashLoan.emergencyPause();
       expect(await flashLoan.paused()).to.equal(true);
-      
+
       await flashLoan.emergencyUnpause();
       expect(await flashLoan.paused()).to.equal(false);
     });
@@ -294,7 +294,7 @@ describe("FlashLoanInstitutional", function () {
       const initialCircuitBreaker = await flashLoan.circuitBreakerActive();
       await flashLoan.triggerCircuitBreaker("test");
       expect(await flashLoan.circuitBreakerActive()).to.equal(true);
-      
+
       await flashLoan.resetCircuitBreaker();
       expect(await flashLoan.circuitBreakerActive()).to.equal(initialCircuitBreaker);
     });

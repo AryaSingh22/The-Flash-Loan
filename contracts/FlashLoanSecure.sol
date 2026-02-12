@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol"; 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";  
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "hardhat/console.sol";
+
 
 /**
  * @title FlashLoanSecure
@@ -26,7 +26,7 @@ contract FlashLoanSecure is IUniswapV2Callee, ReentrancyGuard, Ownable2Step, Pau
     uint256 private constant FEE_DENOM = 997;
     
     // Risk management constants
-    uint256 private constant MAX_SLIPPAGE_BPS = 10_000;
+    uint256 private constant MAX_SLIPPAGE_BPS = 500;   // 5%
     uint256 private constant MIN_LOAN_AMOUNT = 1e15; // 0.001 ETH equivalent minimum
     uint256 private constant MAX_LOAN_AMOUNT = 1000e18; // 1000 token maximum
     uint256 private constant DEADLINE_BUFFER = 300; // 5 minutes

@@ -40,7 +40,7 @@ describe("FlashLoanPolygon", function () {
       expect(await flashLoan.WMATIC()).to.equal(WMATIC);
       expect(await flashLoan.WETH()).to.equal(WETH);
       expect(await flashLoan.DAI()).to.equal(DAI);
-      expect(await flashLoan.chainlinkOracle()).to.equal(CHAINLINK_ORACLE);
+      expect(await flashLoan.tokenOracles(USDC)).to.equal(CHAINLINK_ORACLE);
       expect(await flashLoan.feeRecipient()).to.equal(feeRecipient.address);
       expect(await flashLoan.owner()).to.equal(feeRecipient.address);
     });

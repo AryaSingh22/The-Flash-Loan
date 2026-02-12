@@ -52,11 +52,16 @@ graph TD
 
 ### Core Components
 
-1. **FlashLoanPolygon.sol**: Main contract implementing flash loan functionality
-2. **PriceOraclePolygon.sol**: Price oracle for multi-DEX price feeds
-3. **MockOracle.sol**: Mock Chainlink oracle for testing
-4. **Arbitrage Bot**: JavaScript/TypeScript implementation for monitoring and execution
-5. **Deployment Scripts**: Scripts for Mumbai testnet and Polygon mainnet
+1. **FlashLoanSecure.sol**: **(Recommended)** Enhanced, secure, and production-ready flash loan contract.
+2. **FlashLoanPolygon.sol**: Polygon-optimized flash loan contract.
+3. **PriceOraclePolygon.sol**: Price oracle for multi-DEX price feeds.
+4. **MockOracle.sol**: Mock Chainlink oracle for testing.
+5. **Arbitrage Bot**: JavaScript/TypeScript implementation for monitoring and execution.
+6. **Deployment Scripts**: Scripts for Mumbai testnet and Polygon mainnet.
+
+## 🔒 Security Analysis
+
+For a detailed breakdown of security features, vulnerabilities fixed, and audit results, please refer to [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md).
 
 ## 📄 Smart Contracts
 
@@ -124,6 +129,12 @@ cd ..
 ```bash
 # Run unit tests
 npx hardhat test
+
+# Run security suite (Recommended)
+npx hardhat test test/FlashLoanSecurity.js
+
+# Run reproduction tests (Vulnerability verification)
+npx hardhat test test/Reproduction.test.js
 
 # Run specific test file
 npx hardhat test test/FlashLoanPolygon.test.js
